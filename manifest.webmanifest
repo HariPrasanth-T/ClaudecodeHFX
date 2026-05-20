@@ -1,0 +1,54 @@
+{
+  "name": "HSE Certificate Tracker",
+  "short_name": "HSE Tracker",
+  "description": "HSE course certificate, medical, document and vehicle tracking with expiry alerts",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "lang": "en",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "./index.html#dashboard",
+      "description": "Open the dashboard"
+    },
+    {
+      "name": "Personnel",
+      "short_name": "People",
+      "url": "./index.html#personnel"
+    },
+    {
+      "name": "Documents",
+      "url": "./index.html#documents"
+    },
+    {
+      "name": "Vehicles",
+      "url": "./index.html#vehicles"
+    }
+  ]
+}

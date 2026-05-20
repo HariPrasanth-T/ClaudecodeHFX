@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1220" />
+<meta name="description" content="HSE Certificate Tracker — track training, medical, documents and vehicles with expiry alerts." />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/styles.css" />
+<title>HSE Tracker</title>
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="menuToggle" aria-label="Toggle menu">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="brand">
+      <img src="icons/icon.svg" alt="" width="28" height="28" />
+      <span>HSE Tracker</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="globalSearchBtn" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="icon-btn" id="notifBtn" aria-label="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 5 3 7 3 7H3s3-2 3-7zM10 19a2 2 0 004 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="badge" id="notifBadge" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <nav>
+      <a href="#dashboard" class="nav-link active" data-view="dashboard">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 9h8V3h-8z" fill="currentColor"/></svg>
+        Dashboard
+      </a>
+      <a href="#personnel" class="nav-link" data-view="personnel">
+        <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm-8 9a8 8 0 0116 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        Personnel & Training
+      </a>
+      <a href="#medical" class="nav-link" data-view="medical">
+        <svg viewBox="0 0 24 24"><path d="M19 8h-3V5a1 1 0 00-1-1H9a1 1 0 00-1 1v3H5a1 1 0 00-1 1v6a1 1 0 001 1h3v3a1 1 0 001 1h6a1 1 0 001-1v-3h3a1 1 0 001-1V9a1 1 0 00-1-1z" fill="currentColor"/></svg>
+        Medical / Fitness
+      </a>
+      <a href="#documents" class="nav-link" data-view="documents">
+        <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 01-1 1H6a1 1 0 01-1-1V3a1 1 0 011-1zm9 0v6h6" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>
+        Documents & IDs
+      </a>
+      <a href="#vehicles" class="nav-link" data-view="vehicles">
+        <svg viewBox="0 0 24 24"><path d="M3 13l2-6a2 2 0 012-1h10a2 2 0 012 1l2 6v5H3zM7 17a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z" fill="currentColor"/></svg>
+        Vehicles
+      </a>
+      <a href="#history" class="nav-link" data-view="history">
+        <svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M3 12a9 9 0 109-9 9 9 0 00-7 3.5L3 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        Expired History
+      </a>
+      <a href="#alerts" class="nav-link" data-view="alerts">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 22h20L12 2zm0 7v6m0 3v.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Alerts
+      </a>
+      <a href="#settings" class="nav-link" data-view="settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="installBtn" class="btn btn-ghost" hidden>Install App</button>
+      <div class="version">v1.0</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- Dashboard -->
+    <section class="view active" id="view-dashboard">
+      <div class="view-header">
+        <h1>Dashboard</h1>
+        <div class="view-actions">
+          <button class="btn btn-ghost" id="dashRefresh">Refresh</button>
+          <button class="btn btn-primary" id="dashShare">Share Summary</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-head"><h3>Expiry Status (Courses)</h3></div>
+          <div id="donutChart" class="chart-wrap"></div>
+          <div class="legend" id="donutLegend"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Expiring Soon</h3><span class="muted" id="expiringCount">0</span></div>
+          <div id="expiringList" class="list"></div>
+        </div>
+        <div class="card span-2">
+          <div class="card-head"><h3>Expirations Over Next 6 Months</h3></div>
+          <div id="barChart" class="chart-wrap"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>By Module</h3></div>
+          <div id="moduleStats" class="list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Recently Added</h3></div>
+          <div id="recentList" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Personnel -->
+    <section class="view" id="view-personnel">
+      <div class="view-header">
+        <h1>Personnel & Training</h1>
+        <div class="view-actions">
+          <div class="search">
+            <input type="search" id="personnelSearch" placeholder="Search by name, civil ID, course..." />
+          </div>
+          <select id="personnelSort" class="sort">
+            <option value="name">Sort: Name</option>
+            <option value="nextExpiry">Sort: Next Expiry</option>
+            <option value="created">Sort: Recently Added</option>
+            <option value="status">Sort: Status</option>
+          </select>
+          <select id="personnelFilter" class="sort">
+            <option value="all">Status: All</option>
+            <option value="ok">Valid</option>
+            <option value="soon">Expiring soon</option>
+            <option value="expired">Expired</option>
+            <option value="missing">No courses</option>
+          </select>
+          <button class="btn btn-primary" id="addPersonBtn">+ Add Person</button>
+        </div>
+      </div>
+      <div class="list-grid" id="personnelList"></div>
+    </section>
+
+    <!-- Medical -->
+    <section class="view" id="view-medical">
+      <div class="view-header">
+        <h1>Medical / Fitness</h1>
+        <div class="view-actions">
+          <div class="search"><input type="search" id="medicalSearch" placeholder="Search by name, medical type..." /></div>
+          <select id="medicalSort" class="sort">
+            <option value="name">Sort: Name</option>
+            <option value="expiry">Sort: Expiry</option>
+            <option value="type">Sort: Type</option>
+          </select>
+          <button class="btn btn-primary" id="addMedicalBtn">+ Add Medical</button>
+        </div>
+      </div>
+      <div class="list-grid" id="medicalList"></div>
+    </section>
+
+    <!-- Documents -->
+    <section class="view" id="view-documents">
+      <div class="view-header">
+        <h1>Documents & IDs</h1>
+        <div class="view-actions">
+          <div class="search"><input type="search" id="documentsSearch" placeholder="Search by name, doc type, number..." /></div>
+          <select id="documentsSort" class="sort">
+            <option value="name">Sort: Holder name</option>
+            <option value="expiry">Sort: Expiry</option>
+            <option value="type">Sort: Type</option>
+          </select>
+          <select id="documentsType" class="sort">
+            <option value="all">All Types</option>
+            <option value="Resident ID">Resident ID</option>
+            <option value="Passport">Passport</option>
+            <option value="Driving License">Driving License</option>
+            <option value="CEP">CEP</option>
+            <option value="DCRP">DCRP</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn btn-primary" id="addDocumentBtn">+ Add Document</button>
+        </div>
+      </div>
+      <div class="list-grid" id="documentsList"></div>
+    </section>
+
+    <!-- Vehicles -->
+    <section class="view" id="view-vehicles">
+      <div class="view-header">
+        <h1>Vehicles</h1>
+        <div class="view-actions">
+          <div class="search"><input type="search" id="vehiclesSearch" placeholder="Search by plate, user, model..." /></div>
+          <select id="vehiclesSort" class="sort">
+            <option value="plate">Sort: Plate</option>
+            <option value="expiry">Sort: Next Expiry</option>
+            <option value="user">Sort: User</option>
+          </select>
+          <button class="btn btn-primary" id="addVehicleBtn">+ Add Vehicle</button>
+        </div>
+      </div>
+      <div class="list-grid" id="vehiclesList"></div>
+    </section>
+
+    <!-- History -->
+    <section class="view" id="view-history">
+      <div class="view-header">
+        <h1>Expired History</h1>
+        <div class="view-actions">
+          <div class="search"><input type="search" id="historySearch" placeholder="Search history..." /></div>
+          <select id="historySource" class="sort">
+            <option value="all">All sources</option>
+            <option value="course">Courses</option>
+            <option value="medical">Medical</option>
+            <option value="document">Documents</option>
+            <option value="vehicle">Vehicles</option>
+          </select>
+          <button class="btn btn-ghost" id="exportHistory">Export</button>
+        </div>
+      </div>
+      <div class="list-grid" id="historyList"></div>
+    </section>
+
+    <!-- Alerts -->
+    <section class="view" id="view-alerts">
+      <div class="view-header">
+        <h1>Expiry Alerts</h1>
+        <div class="view-actions">
+          <button class="btn btn-ghost" id="enableNotifBtn">Enable Notifications</button>
+          <button class="btn btn-ghost" id="testNotifBtn">Test Alert</button>
+        </div>
+      </div>
+      <div class="card">
+        <p class="muted">Alerts trigger at 45, 30, 15, 10, 5, 3 and 1 day before expiry — and after expiry.</p>
+        <div id="alertsList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="view" id="view-settings">
+      <div class="view-header"><h1>Settings</h1></div>
+      <div class="card">
+        <h3>Notifications</h3>
+        <label class="row"><input type="checkbox" id="setNotifEnabled" /> Enable browser notifications</label>
+        <div class="muted">Alerts checked when app is opened. Install as PWA for background reminders on supported devices.</div>
+      </div>
+      <div class="card">
+        <h3>Data</h3>
+        <div class="row gap">
+          <button class="btn" id="exportBtn">Export backup (JSON + files)</button>
+          <button class="btn" id="importBtn">Import backup</button>
+          <input type="file" id="importInput" accept="application/json,application/zip" hidden />
+          <button class="btn btn-danger" id="wipeBtn">Wipe all data</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Custom Course Catalog</h3>
+        <div class="row gap">
+          <input type="text" id="newCourseInput" placeholder="Add a course name (e.g. Working at Heights)" />
+          <button class="btn btn-primary" id="addCourseBtn">+ Add</button>
+        </div>
+        <div id="courseCatalog" class="chips"></div>
+      </div>
+      <div class="card">
+        <h3>About</h3>
+        <p class="muted">HSE Certificate Tracker PWA — works offline, installable on Android/iOS/Desktop. All data is stored on this device.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Detail / Edit -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel" id="modalPanel">
+      <div class="modal-head">
+        <h2 id="modalTitle">Details</h2>
+        <button class="icon-btn" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <!-- Lightbox for certificate preview -->
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="lightbox-backdrop" data-close></div>
+    <div class="lightbox-panel">
+      <button class="icon-btn lightbox-close" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div id="lightboxContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <!-- Global Search -->
+  <div class="search-overlay" id="searchOverlay" hidden>
+    <div class="search-backdrop" data-close></div>
+    <div class="search-panel">
+      <input type="search" id="globalSearchInput" placeholder="Search across people, medical, documents, vehicles..." autocomplete="off" />
+      <div class="search-results" id="globalSearchResults"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>
