@@ -321,6 +321,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .file-row .preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
 .file-row .filename { color: var(--muted); font-size: 12px; word-break: break-all; }
 
+/* Drag and drop overlay */
+.cert-preview.dragover { outline: 2px dashed var(--primary); outline-offset: -8px; background: rgba(56,189,248,.08); }
+.drop-hint { position: absolute; pointer-events: none; color: var(--primary); font-weight: 600; font-size: 14px; }
+
 /* Print */
 @media print {
   .topbar, .sidebar, .view-actions, .modal-foot { display: none; }

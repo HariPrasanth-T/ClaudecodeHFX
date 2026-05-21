@@ -680,6 +680,8 @@ async function openPersonModal(id) {
     `;
     $('#modalFoot').innerHTML = `
       ${!isNew ? '<button class="btn btn-danger" id="delPerson">Delete Person</button>' : ''}
+      ${!isNew ? '<button class="btn" id="printPerson">Print / Save PDF</button>' : ''}
+      ${!isNew ? '<button class="btn" id="sharePerson">Share Summary</button>' : ''}
       <div class="flex-spacer"></div>
       <button class="btn" data-close>Cancel</button>
       <button class="btn btn-primary" id="savePerson">Save</button>
@@ -708,8 +710,26 @@ async function openPersonModal(id) {
     const sb = $('#shareCert'); if (sb) sb.onclick = () => shareCert(selectedItem, person);
     const rm = $('#rmFile'); if (rm) rm.onclick = async () => {
       if (selectedItem.fileId) { await deleteFile(selectedItem.fileId); selectedItem.fileId = null; selectedItem.fileName = ''; selectedItem.fileType = ''; }
+      await dbApi.put('personnel', person);
       render();
     };
+
+    // Drag-and-drop file onto cert preview to attach to the selected cert
+    const dropZone = $('#certPreview');
+    if (dropZone && selectedItem) {
+      ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('dragover'); }));
+      ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('dragover'); }));
+      dropZone.addEventListener('drop', async e => {
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
+        if (selectedItem.fileId) await deleteFile(selectedItem.fileId);
+        const fi = await saveFile(file);
+        selectedItem.fileId = fi.id; selectedItem.fileName = fi.name; selectedItem.fileType = fi.type;
+        await dbApi.put('personnel', person);
+        toast('File attached', 'success');
+        render();
+      });
+    }
 
     $('#savePerson').onclick = async () => {
       person.name = $('#f_name').value.trim();
@@ -728,6 +748,9 @@ async function openPersonModal(id) {
       toast('Saved', 'success');
       renderPersonnel();
     };
+
+    const pp = $('#printPerson'); if (pp) pp.onclick = () => printPersonSummary(person);
+    const sp = $('#sharePerson'); if (sp) sp.onclick = () => sharePersonSummary(person);
 
     const dp = $('#delPerson'); if (dp) dp.onclick = async () => {
       if (!confirm(`Delete ${person.name}? All courses & medicals will be archived.`)) return;
@@ -831,7 +854,7 @@ async function openPersonModal(id) {
         selectedCertId = cert.id;
         return true;
       }}
-    ]);
+    ], render);
 
     const sel = document.getElementById('cf_name');
     const other = document.getElementById('cf_nameOther');
@@ -936,25 +959,24 @@ function certRowHtml(c, selectedId, isMedical) {
   </div>`;
 }
 
-function certPreviewHtml(item) {
-  if (!item) return `<div class="cert-empty">Select a course or medical to view its certificate.</div>`;
-  if (!item.fileId) return `<div class="cert-empty">No file attached.<br><br>Click <strong>Edit</strong> and attach a PDF or image.</div>`;
-  // We'll fetch the blob async
+function certPreviewHtml(item, targetId = 'certPreview') {
+  if (!item) return `<div class="cert-empty" data-preview-target="${targetId}">Select a course or medical to view its certificate.</div>`;
+  if (!item.fileId) return `<div class="cert-empty" data-preview-target="${targetId}">No file attached.<br><br>Click <strong>Edit</strong> and attach a PDF or image.</div>`;
   setTimeout(async () => {
     const f = await getFile(item.fileId);
     if (!f) return;
     const url = URL.createObjectURL(f.blob);
     const isImg = (f.type||'').startsWith('image/');
     const isPdf = (f.type||'').includes('pdf');
-    const el = $('#certPreview');
+    const el = document.getElementById(targetId);
     if (!el) { URL.revokeObjectURL(url); return; }
-    if (isImg) el.innerHTML = `<img src="${url}" alt="${escapeHtml(f.name)}" data-lightbox />`;
+    if (isImg) el.innerHTML = `<img src="${url}" alt="${escapeHtml(f.name)}" />`;
     else if (isPdf) el.innerHTML = `<iframe src="${url}#toolbar=0" title="${escapeHtml(f.name)}"></iframe>`;
     else el.innerHTML = `<div class="cert-empty"><a href="${url}" download="${escapeHtml(f.name)}">${escapeHtml(f.name)}</a></div>`;
     const img = el.querySelector('img');
     if (img) img.onclick = () => openLightbox(item);
   }, 10);
-  return `<div class="cert-empty">Loading…</div>`;
+  return `<div class="cert-empty" data-preview-target="${targetId}">Loading…</div>`;
 }
 
 async function openLightbox(item) {
@@ -1080,7 +1102,7 @@ async function openDocumentModal(id) {
         </div>
         <div>
           <h3>Document File</h3>
-          <div class="cert-preview" id="docPreview">${certPreviewHtml(doc)}</div>
+          <div class="cert-preview" id="docPreview">${certPreviewHtml(doc, 'docPreview')}</div>
           ${doc.fileId ? `<div class="row gap" style="margin-top:10px">
             <button class="btn" id="zoomDoc">View Fullscreen</button>
             <button class="btn" id="shareDoc">Share</button>
@@ -1088,12 +1110,6 @@ async function openDocumentModal(id) {
         </div>
       </div>
     `;
-    // certPreviewHtml writes to #certPreview - swap target id
-    const cp = $('#docPreview');
-    if (cp) {
-      cp.id = 'certPreview';
-      setTimeout(() => { const x = $('#certPreview'); if (x) x.id = 'docPreview'; }, 100);
-    }
     $('#modalFoot').innerHTML = `
       ${!isNew ? '<button class="btn btn-danger" id="delDoc">Delete</button>' : ''}
       ${!isNew && doc.expiry ? '<button class="btn btn-success" id="renewDoc">Renew</button>' : ''}
@@ -1374,7 +1390,7 @@ async function openVehicleModal(id) {
         selectedRecId = rec.id;
         return true;
       }}
-    ]);
+    ], render);
     const sel = $('#vr_kind'), oth = $('#vr_kindOther');
     sel.onchange = () => { oth.hidden = sel.value !== '__other__'; };
     const ii = $('#vr_issued'), vv = $('#vr_validity'), ex = $('#vr_expiry');
@@ -1501,10 +1517,12 @@ function closeModal() { $('#modal').hidden = true; }
 function closeLightbox() { $('#lightbox').hidden = true; $('#lightboxContent').innerHTML = ''; }
 function closeSearch() { $('#searchOverlay').hidden = true; }
 
-let subModalPrev = null;
-function showSubModal(title, bodyHtml, buttons) {
-  // Stack-like behavior: replace inner content of modal, but remember previous to restore
-  subModalPrev = { title: $('#modalTitle').textContent, body: $('#modalBody').innerHTML, foot: $('#modalFoot').innerHTML };
+let subModalOnReturn = null;
+let subModalHadParent = false;
+function showSubModal(title, bodyHtml, buttons, onReturn) {
+  // If invoked from another (parent) modal, remember to re-render that parent on close.
+  subModalHadParent = !$('#modal').hidden;
+  subModalOnReturn = onReturn || null;
   $('#modalTitle').textContent = title;
   $('#modalBody').innerHTML = bodyHtml;
   $('#modalFoot').innerHTML = buttons.map((b, i) => `<button class="${b.class}" data-i="${i}">${b.label}</button>`).join('');
@@ -1516,23 +1534,88 @@ function showSubModal(title, bodyHtml, buttons) {
       if (ok !== false) restoreSubModal();
     }
   });
+  showModal();
 }
 function restoreSubModal() {
-  if (!subModalPrev) return closeModal();
-  $('#modalTitle').textContent = subModalPrev.title;
-  $('#modalBody').innerHTML = subModalPrev.body;
-  $('#modalFoot').innerHTML = subModalPrev.foot;
-  subModalPrev = null;
-  // The outer modal listeners may be stale - re-render the current view to refresh
+  const cb = subModalOnReturn;
+  subModalOnReturn = null;
+  if (cb) {
+    // Parent supplied a re-render callback — keep modal open and let it repaint.
+    cb();
+    return;
+  }
+  // Otherwise close the modal entirely.
+  closeModal();
+  // If a list view is visible, refresh it so any saved changes show.
   const active = $$('.view.active')[0];
   if (active) renderView(active.id.replace('view-',''));
-  // also close modal - we want fresh state
-  closeModal();
 }
 
 // ============================================================
 // SHARING
 // ============================================================
+function printPersonSummary(person) {
+  const rows = (label, list, titleOf) => list.length === 0 ? '' : `
+    <h3>${label}</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px">
+      <thead><tr style="background:#eef2f7"><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Name</th><th style="padding:6px;border:1px solid #cbd5e1">Cert No.</th><th style="padding:6px;border:1px solid #cbd5e1">Issued</th><th style="padding:6px;border:1px solid #cbd5e1">Expires</th><th style="padding:6px;border:1px solid #cbd5e1">Status</th></tr></thead>
+      <tbody>${list.map(c => {
+        const s = statusOf(c.expiry);
+        return `<tr><td style="padding:6px;border:1px solid #cbd5e1">${escapeHtml(titleOf(c))}</td><td style="padding:6px;border:1px solid #cbd5e1">${escapeHtml(c.cert||'')}</td><td style="padding:6px;border:1px solid #cbd5e1">${fmtDate(c.issued)}</td><td style="padding:6px;border:1px solid #cbd5e1">${fmtDate(c.expiry)}</td><td style="padding:6px;border:1px solid #cbd5e1">${s.label}</td></tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(person.name)} — HSE Summary</title>
+    <style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#0b1220;padding:24px;max-width:780px;margin:auto}
+      h1{margin:0 0 4px 0}h3{margin-top:18px;border-bottom:1px solid #cbd5e1;padding-bottom:4px}
+      .meta{color:#475569;margin-bottom:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:13px}</style>
+    </head><body>
+    <h1>${escapeHtml(person.name)}</h1>
+    <div class="meta">HSE Certificate Summary • Generated ${fmtDate(new Date())}</div>
+    <div class="grid">
+      <div><strong>Civil ID:</strong> ${escapeHtml(person.civilId||'—')}</div>
+      <div><strong>Position:</strong> ${escapeHtml(person.position||'—')}</div>
+      <div><strong>Department:</strong> ${escapeHtml(person.department||'—')}</div>
+      <div><strong>Phone:</strong> ${escapeHtml(person.phone||'—')}</div>
+      <div><strong>Email:</strong> ${escapeHtml(person.email||'—')}</div>
+    </div>
+    ${rows('Training Courses', person.courses||[], c => c.name)}
+    ${rows('Medical / Fitness', person.medicals||[], c => c.type)}
+    </body></html>`;
+  const w = window.open('', '_blank');
+  if (!w) { toast('Pop-up blocked', 'error'); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 250);
+}
+
+async function sharePersonSummary(person) {
+  const lines = [`*${person.name}* — HSE Summary`];
+  if (person.civilId) lines.push(`Civil ID: ${person.civilId}`);
+  if (person.position) lines.push(`Position: ${person.position}`);
+  lines.push('');
+  if ((person.courses||[]).length) {
+    lines.push('*Courses:*');
+    for (const c of person.courses) lines.push(`• ${c.name} — expires ${fmtDate(c.expiry)} (${statusOf(c.expiry).label})`);
+  }
+  if ((person.medicals||[]).length) {
+    lines.push('*Medical:*');
+    for (const m of person.medicals) lines.push(`• ${m.type} — expires ${fmtDate(m.expiry)} (${statusOf(m.expiry).label})`);
+  }
+  const text = lines.join('\n');
+  try {
+    if (navigator.share) { await navigator.share({ title: person.name + ' — HSE', text }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  showSubModal('Share Summary', `
+    <textarea readonly rows="10" style="width:100%">${escapeHtml(text)}</textarea>
+    <div class="row gap" style="margin-top:8px">
+      <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">WhatsApp</a>
+      <a class="btn" target="_blank" rel="noopener" href="mailto:?subject=${encodeURIComponent(person.name+' — HSE Summary')}&body=${encodeURIComponent(text)}">Email</a>
+      <button class="btn" id="copySummary">Copy</button>
+    </div>
+  `, [{ label: 'Close', class: 'btn', close: true }]);
+  $('#copySummary').onclick = async () => { try { await navigator.clipboard.writeText(text); toast('Copied', 'success'); } catch { toast('Copy failed', 'error'); } };
+}
+
 async function shareCert(item, person) {
   if (!item) return;
   const lines = [];
@@ -1740,7 +1823,6 @@ function wireEvents() {
   // Add buttons
   $('#addPersonBtn').onclick = () => openPersonModal();
   $('#addMedicalBtn').onclick = async () => {
-    // pick person first
     if (state.personnel.length === 0) { toast('Add a person first', 'warn'); location.hash = '#personnel'; setTimeout(() => openPersonModal(), 200); return; }
     showSubModal('Choose person', `
       <select id="chooseP" style="width:100%">
@@ -1751,11 +1833,10 @@ function wireEvents() {
       { label: 'Cancel', class: 'btn', close: true },
       { label: 'Open', class: 'btn btn-primary', action: () => {
         const pid = $('#chooseP').value; if (!pid) { toast('Select a person', 'error'); return false; }
-        closeModal(); setTimeout(() => openPersonModal(pid), 50);
+        setTimeout(() => openPersonModal(pid), 50);
         return true;
       }}
     ]);
-    showModal();
   };
   $('#addDocumentBtn').onclick = () => openDocumentModal();
   $('#addVehicleBtn').onclick = () => openVehicleModal();
